@@ -130,7 +130,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     Your minimax agent with alpha-beta pruning (question 3)
     """
 
-    def alphabeta(self, gameState, depth, agent):
+    def alphabeta(self, gameState, depth, a, b, agent):
         bestMove = ''
         if agent == gameState.getNumAgents():
             agent = 0
@@ -142,17 +142,23 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         if agent == 0:
             bestValue = -math.inf
             for action in gameState.getLegalActions(agent):
-                val, move = self.minimax(gameState.generateSuccessor(agent, action), depth, agent + 1)
+                val, move = self.alphabeta(gameState.generateSuccessor(agent, action), depth, a, b, agent + 1)
                 if val > bestValue:
                     bestMove = action
                     bestValue = val
+                a = max(a, bestValue)
+                if b <= a:
+                    break
         else:
             bestValue = math.inf
             for action in gameState.getLegalActions(agent):
-                val, move = self.minimax(gameState.generateSuccessor(agent, action), depth, agent + 1)
+                val, move = self.alphabeta(gameState.generateSuccessor(agent, action), depth, a, b, agent + 1)
                 if val < bestValue:
                     bestMove = action
                     bestValue = val
+                b = min(b, bestValue)
+                if b < a:
+                    break
 
         return bestValue, bestMove
 
@@ -162,7 +168,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
         "*** YOUR CODE HERE ***"
 
-        val, move = self.minimax(gameState, 0, 0)
+        val, move = self.alphabeta(gameState, 0, -math.inf, math.inf, 0)
 
         print(move)
 
