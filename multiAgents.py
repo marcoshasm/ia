@@ -27,7 +27,35 @@ def scoreEvaluationFunction(currentGameState):
     This evaluation function is meant for use with adversarial search agents
     (not reflex agents).
     """
-    return currentGameState.getScore()
+    #return currentGameState.getScore()
+    return betterEvaluationFunction(currentGameState)
+
+def mindist(gameState, depth):
+    position = gameState.getPacmanPosition()
+    adj = []
+    adj.append({"x": position[0], "y": position[1], "depth": 0})
+    food = gameState.getFood()
+    walls = gameState.getWalls()
+    width = len(list(walls))
+    height = len(walls[0])
+    i = 0
+
+    while True:
+        if (adj[i]["depth"] > depth):
+            break
+        if (food[adj[i]["x"]][adj[i]["y"]]):
+            return adj[i]["depth"]
+        if (adj[i]["x"] + 1 < width and not walls[adj[i]["x"] + 1][adj[i]["y"]]):
+            adj.append({"x": adj[i]["x"] + 1, "y": adj[i]["y"], "depth": adj[i]["depth"] + 1})
+        if (adj[i]["x"] - 1 > 0 and not walls[adj[i]["x"] - 1][adj[i]["y"]]):
+            adj.append({"x": adj[i]["x"] - 1, "y": adj[i]["y"], "depth": adj[i]["depth"] + 1})
+        if (adj[i]["y"] + 1 < height and not walls[adj[i]["x"]][adj[i]["y"] + 1]):
+            adj.append({"x": adj[i]["x"], "y": adj[i]["y"] + 1, "depth": adj[i]["depth"] + 1})
+        if (adj[i]["y"] - 1 > 0 and not walls[adj[i]["x"]][adj[i]["y"] - 1]):
+            adj.append({"x": adj[i]["x"], "y": adj[i]["y"] - 1, "depth": adj[i]["depth"] + 1})
+        i += 1
+    return depth + 1
+
 
 class MultiAgentSearchAgent(Agent):
     """
@@ -104,24 +132,10 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns whether or not the game state is a losing state
         """
         "*** YOUR CODE HERE ***"
-        #print(gameState.getLegalActions(1))
-        #gameState.getNextState(0, 'West')
-        #print(gameState.getNumAgents())
-        #print(gameState.isWin())
-        #print(gameState.isLose())
 
         val, move = self.minimax(gameState, 0, 0)
 
-        print(move)
-
         return move
-        #print(move)
-
-        # return self.minimax(gameState, self.depth, 0)
-
-        # wait = input("press enter to resume")
-
-        return gameState.getLegalActions(0)[len(gameState.getLegalActions(0))-1]
         
         util.raiseNotDefined()
 
@@ -170,8 +184,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
         val, move = self.alphabeta(gameState, 0, -math.inf, math.inf, 0)
 
-        print(move)
-
         return move
 
         util.raiseNotDefined()
@@ -180,6 +192,30 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
     """
       Your expectimax agent (question 4)
     """
+    def expectimax(self, gameState, depth, agent):
+        bestMove = ''
+        if agent == gameState.getNumAgents():
+            agent = 0
+            depth += 1
+
+        if depth == self.depth or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState), bestMove
+
+        if agent == 0:
+            bestValue = -math.inf
+            for action in gameState.getLegalActions(agent):
+                val, move = self.expectimax(gameState.generateSuccessor(agent, action), depth, agent + 1)
+                if val > bestValue:
+                    bestMove = action
+                    bestValue = val
+        else:
+            bestValue = 0
+            for action in gameState.getLegalActions(agent):
+                p = 1 / len(gameState.getLegalActions(agent))
+                val, move = self.expectimax(gameState.generateSuccessor(agent, action), depth, agent + 1)
+                bestValue += p * val
+        
+        return bestValue, bestMove
 
     def getAction(self, gameState):
         """
@@ -189,6 +225,11 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         legal moves.
         """
         "*** YOUR CODE HERE ***"
+
+        val, move = self.expectimax(gameState, 0, 0)
+
+        return move
+
         util.raiseNotDefined()
 
 def betterEvaluationFunction(currentGameState):
@@ -199,6 +240,11 @@ def betterEvaluationFunction(currentGameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
+    score = currentGameState.getScore()
+
+    # achar distância minima para o ponto mais próximo
+    score -= mindist(currentGameState, 5)
+    return score
     util.raiseNotDefined()    
 
 # Abbreviation
